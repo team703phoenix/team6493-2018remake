@@ -26,10 +26,13 @@ public class RobotMap {
 
 	public static final int PRIMARY_LIFT_MOTOR_CHANNEL = 5;
 	public static final int SECONDARY_LIFT_MOTOR_CHANNEL = 6;
+	
+	public static final int PCM_CHANNEL = 11;
 
 	public static final int LIFT_SOLENOID_CHANNEL = 0;
 
-	public static final int ARM_SOLENOID_CHANNEL = 7;
+	public static final int ARM_SOLENOID_CHANNEL = 1;
+	public static final int ARM_LIFT_SOLENOID_CHANNEL = 2;
 
 	public static final int ARM_MOTOR_LEFT = 9;
 	public static final int ARM_MOTOR_RIGHT = 10;
@@ -51,10 +54,10 @@ public class RobotMap {
 	public static final double DRIVETRAIN_ENCODER_INCHES_PER_PULSE = DRIVETRAIN_WHEEL_CIRCUMFERENCE / PULSES_PER_REVOLUTION;
 	
 	/* Button Mapping for Driving */
-	public static final int DRIVE_LEFT = 1; // DUMMY VALUE
-	public static final int DRIVE_RIGHT = 2; // DUMMY VALUE
-	public static final int DRIVE_FORWARD = 1; // DUMMY VALUE
-	public static final int DRIVE_TURN = 2; // DUMMY VALUE
+	public static final int DRIVE_LEFT = 1;
+	public static final int DRIVE_RIGHT = 1;
+	public static final int DRIVE_FORWARD = 1;
+	public static final int DRIVE_TURN = 0;
 
 	/* Button Mapping for Elevator */
 	public static final int ELEVATOR_UP = 5;

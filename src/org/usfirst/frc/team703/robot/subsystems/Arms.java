@@ -8,13 +8,15 @@ public class Arms {
     private static WPI_TalonSRX leftArm;
     private static WPI_TalonSRX rightArm;
     private static Solenoid open;
+    private static Solenoid up;
     public boolean armsOpen;
     public double mult = 1;
 
     public Arms(){
         leftArm = new WPI_TalonSRX(RobotMap.ARM_MOTOR_LEFT);
         rightArm = new WPI_TalonSRX(RobotMap.ARM_MOTOR_RIGHT);
-        open = new Solenoid(RobotMap.ARM_SOLENOID_CHANNEL);
+        open = new Solenoid(RobotMap.PCM_CHANNEL, RobotMap.ARM_SOLENOID_CHANNEL);
+        up = new Solenoid(RobotMap.PCM_CHANNEL, RobotMap.ARM_LIFT_SOLENOID_CHANNEL);
     }
 
     public void open(){

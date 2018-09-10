@@ -26,7 +26,7 @@ public class DriveTrain {
 	private final double GYRO_SCALER = 1; //1.025; // 1.02 for roborio gyro (lower value makes it turn more, higher value makes it turn less) 1.065
 	
 	// Encoder constants
-	private final int TICKS_PER_ROTATION = RobotMap.PULSES_PER_REVOLUTION;
+	private final int TICKS_PER_ROTATION = 750;
 	
 	// Drive variables
 	private double leftDrive, rightDrive;
@@ -51,6 +51,9 @@ public class DriveTrain {
 		left1 = new WPI_TalonSRX(left1ID);
 		left1.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, 0, 10);
 		right1 = new WPI_TalonSRX(right1ID);
+		right1.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, 0, 10);
+		
+		gyro = new ADXRS450_Gyro();
 		
 		this.robot = robot;
 	}
@@ -64,7 +67,6 @@ public class DriveTrain {
 
 		right2 = new WPI_TalonSRX(right2ID);
 		right2.follow(right1);
-		right2.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, 0, 10);
 	}
 	
 	/** Creates a 6 motor drive train */
@@ -138,9 +140,14 @@ public class DriveTrain {
 	public void forcedTankDrive(double leftDrive, double rightDrive) {
 		if (Math.abs(leftDrive) > RobotMap.DRIVE_DEADBAND)
 			left1.set(-leftDrive);
+		else
+			left1.set(0);
 		
 		if (Math.abs(rightDrive) > RobotMap.DRIVE_DEADBAND)
 			right1.set(rightDrive);
+		else
+			right1.set(0);
+			
 	}
 	
 	/** Drive the robot using the given variables via arcade drive */
@@ -168,7 +175,7 @@ public class DriveTrain {
 	/** Drives forward or backward a given distance at a given speed using encoders */
 	private void encoderDrive(double distanceInInches, boolean reversed) {
 		final double MIN_SPEED = reversed ? -0.3 : 0.3;
-		final double MAX_SPEED = reversed ? -0.8 : 0.8;
+		final double MAX_SPEED = reversed ? -0.5 : 0.5;
 		final double kP = 0.0003; //0.0002 for high gear
 		
 		double distanceInTicks = inchesToTicks(distanceInInches);
@@ -195,7 +202,7 @@ public class DriveTrain {
 	
 	/** Drives the robot at a given speed, using the gyro to correct it if it steers off course */
 	public void gyroAssistedDrive(double speed) {
-		arcadeDrive(speed, -getGyroCorrectionAngle());
+		forcedArcadeDrive(speed, -getGyroCorrectionAngle());
 	}
 	
 	/** Turns a given number of degrees (positive angle turns right, negative angle turns left */
@@ -236,7 +243,7 @@ public class DriveTrain {
 	/** Resets the left and right encoders */
 	public void resetEncoders() {
 		left1.getSensorCollection().setQuadraturePosition(0, 0);
-		right2.getSensorCollection().setQuadraturePosition(0, 0);
+		right1.getSensorCollection().setQuadraturePosition(0, 0);
 		Utility.sleep(200);
 	}
 	
@@ -270,12 +277,16 @@ public class DriveTrain {
 	
 	/** Returns the left encoder position */
 	public int getLeftEncPosition() {
-		return -left1.getSensorCollection().getQuadraturePosition();
+		int encPosition = -left1.getSensorCollection().getQuadraturePosition();
+		System.out.println("Left enc: " + encPosition);
+		return encPosition;
 	}
 	
 	/** Returns the right encoder position */
 	public int getRightEncPosition() {
-		return right2.getSensorCollection().getQuadraturePosition();
+		int encPosition = right1.getSensorCollection().getQuadraturePosition();
+		System.out.println("Right enc: " + encPosition);
+		return encPosition;
 	}
 	
 }

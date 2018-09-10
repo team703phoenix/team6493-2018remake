@@ -14,7 +14,7 @@ public class Elevator {
         liftMotorPrime = new WPI_TalonSRX(RobotMap.PRIMARY_LIFT_MOTOR_CHANNEL);
         liftMotorSecunde = new WPI_VictorSPX(RobotMap.SECONDARY_LIFT_MOTOR_CHANNEL);
 
-        brake = new Solenoid(RobotMap.LIFT_SOLENOID_CHANNEL);
+        brake = new Solenoid(RobotMap.PCM_CHANNEL, RobotMap.LIFT_SOLENOID_CHANNEL);
 
         liftMotorSecunde.follow(liftMotorPrime);
     }

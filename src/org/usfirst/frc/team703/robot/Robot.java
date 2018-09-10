@@ -19,6 +19,7 @@ public class Robot extends IterativeRobot {
 	boolean armToggle = true;
 	
 	boolean autoMode; // Used for multiple robot classes
+	boolean autoEnd = false;
 
 	public void robotInit() {
 		drive = new DriveTrain(RobotMap.LEFT_FRONT_MOTOR_CHANNEL, RobotMap.LEFT_REAR_MOTOR_CHANNEL,
@@ -29,10 +30,15 @@ public class Robot extends IterativeRobot {
 	
 	public void autonomousInit() {
 		autoMode = true;
+		autoEnd = false;
 	}
 	
 	public void autonomousPeriodic() {
+		if (!autoEnd) {
+			drive.driveForward(48);
+		}
 		
+		autoEnd = true;
 	}
 	
 	public void teleopInit() {
