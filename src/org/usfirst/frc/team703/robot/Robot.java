@@ -35,7 +35,8 @@ public class Robot extends IterativeRobot {
 	
 	public void autonomousPeriodic() {
 		if (!autoEnd) {
-			drive.driveForward(48);
+			//drive.driveForward(48);
+			drive.turnRight(90);
 		}
 		
 		autoEnd = true;

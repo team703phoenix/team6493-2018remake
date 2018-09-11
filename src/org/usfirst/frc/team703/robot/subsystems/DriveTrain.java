@@ -23,7 +23,7 @@ public class DriveTrain {
 	
 	// Gyro constants
 	private final double GYRO_CORRECTION_SCALER = 0.05;  // 0.08 for low gear
-	private final double GYRO_SCALER = 1; //1.025; // 1.02 for roborio gyro (lower value makes it turn more, higher value makes it turn less) 1.065
+	private final double GYRO_SCALER = 1.02; //1.025; // 1.02 for roborio gyro (lower value makes it turn more, higher value makes it turn less) 1.065
 	
 	// Encoder constants
 	private final int TICKS_PER_ROTATION = 750;
@@ -175,7 +175,7 @@ public class DriveTrain {
 	/** Drives forward or backward a given distance at a given speed using encoders */
 	private void encoderDrive(double distanceInInches, boolean reversed) {
 		final double MIN_SPEED = reversed ? -0.3 : 0.3;
-		final double MAX_SPEED = reversed ? -0.5 : 0.5;
+		final double MAX_SPEED = reversed ? -0.7 : 0.7;
 		final double kP = 0.0003; //0.0002 for high gear
 		
 		double distanceInTicks = inchesToTicks(distanceInInches);
@@ -209,7 +209,7 @@ public class DriveTrain {
 	public void turn(double angleInDegrees) {
 		resetGyro();
 		final double MIN_SPEED = (angleInDegrees < 0) ? -0.25 : 0.25; // 0.2
-		final double MAX_SPEED = (angleInDegrees < 0) ? -0.9 : 0.9;
+		final double MAX_SPEED = (angleInDegrees < 0) ? -0.5 : 0.5;
 		final double kP = 0.015;  // 0.016 //0.03 works well for low gear (lower value means slower deceleration, higher value means faster deceleration)
 		double error = 0;
 		
