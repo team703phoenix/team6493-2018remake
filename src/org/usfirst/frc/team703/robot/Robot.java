@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import org.usfirst.frc.team703.robot.subsystems.*;
 
 public class Robot extends IterativeRobot {
+	private String switchSetup;
 
 	public Joystick leftJoy = new Joystick(RobotMap.LEFT_DRIVER);
 	public Joystick rightJoy = new Joystick(RobotMap.RIGHT_DRIVER);
@@ -13,6 +14,8 @@ public class Robot extends IterativeRobot {
 	public DriveTrain drive;
 	public Elevator lift;
 	public Arms intake;
+	
+	public AutonHandler auton;
 
 	boolean moveUp = false;
 	boolean moveDown = false;
@@ -26,17 +29,20 @@ public class Robot extends IterativeRobot {
 							   RobotMap.RIGHT_FRONT_MOTOR_CHANNEL, RobotMap.RIGHT_REAR_MOTOR_CHANNEL, this);
 		lift = new Elevator();
 		intake = new Arms();
+		
+		auton = new AutonHandler(drive, lift, intake);
 	}
 	
 	public void autonomousInit() {
+		switchSetup = DriverStation.getInstance().getGameSpecificMessage();
+		
 		autoMode = true;
 		autoEnd = false;
 	}
 	
 	public void autonomousPeriodic() {
 		if (!autoEnd) {
-			//drive.driveForward(48);
-			drive.turnRight(90);
+			auton.runAuton(switchSetup, selection, position, false);
 		}
 		
 		autoEnd = true;
