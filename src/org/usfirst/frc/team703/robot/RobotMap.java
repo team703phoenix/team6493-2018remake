@@ -23,6 +23,7 @@ public class RobotMap {
 
 	public static final double DRIVE_DEADBAND = 0.1;
 	public static final double ARM_DEADBAND = 0.1;
+	public static final double ELEVATOR_DEADBAND = 0.1;
 
 	public static final int PRIMARY_LIFT_MOTOR_CHANNEL = 5;
 	public static final int SECONDARY_LIFT_MOTOR_CHANNEL = 6;
@@ -36,8 +37,6 @@ public class RobotMap {
 
 	public static final int ARM_MOTOR_LEFT = 9;
 	public static final int ARM_MOTOR_RIGHT = 10;
-	
-	public static final double ELEVATOR_DEADBAND = 0.1;
 	
 	public static final int DRIVER = 0;
 	public static final int OPERATOR = 1;

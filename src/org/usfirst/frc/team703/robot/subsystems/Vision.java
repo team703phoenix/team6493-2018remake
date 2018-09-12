@@ -28,11 +28,13 @@ public class Vision {
 	
 	/** Scans the area to find the given object */
 	public void scan(boolean scanLeft) {
-		if (!hasValidTarget() && (robot.getAutoMode()) ? robot.isAutonomous() : !robot.cont.getRawButton(RobotMap.VISION_STOP))
+		if (!hasValidTarget() && (robot.getAutoMode()) ? robot.isAutonomous() :
+			!robot.cont.getRawButton(RobotMap.VISION_STOP))
 			robot.drive.arcadeDrive(0, (scanLeft) ? -0.5 : 0.5);
 	}
 	
-	/** Drives toward a target made of vision tape, using the latest error in the x direction to determine which direction to scan in */
+	/** Drives toward a target made of vision tape, using the latest error in the x direction to determine which
+	 * direction to scan in */
 	public void driveTowardTarget() {
 		driveTowardTarget(latestErrorX < 0);
 	}
@@ -82,7 +84,8 @@ public class Vision {
 	
 	/** Drives toward an object without stopping once it reaches the object */
 	private void driveTowardObjectWithoutStopping(double finalPercentage, boolean scanLeft) {
-		while (getPercentageOfScreen() < finalPercentage && ((robot.getAutoMode()) ? robot.isAutonomous() : !robot.cont.getRawButton(RobotMap.VISION_STOP))) {
+		while (getPercentageOfScreen() < finalPercentage && ((robot.getAutoMode()) ? robot.isAutonomous() :
+			!robot.cont.getRawButton(RobotMap.VISION_STOP))) {
 			if (!hasValidTarget())
 				scan(scanLeft);				
 			else
@@ -126,7 +129,8 @@ public class Vision {
 		setCubePipeline(0);
 	}
 	
-	/** Configures the vision pipeline to work with the cube (max exposure, LEDs off) and pauses for a given amount of milliseconds */
+	/** Configures the vision pipeline to work with the cube (max exposure, LEDs off) and pauses for a given amount of
+	 * milliseconds */
 	public void setCubePipeline(int timeoutMs) {
 		if ((!robot.getAutoMode() || robot.isAutonomous())) {
 			turnOffLED();
@@ -140,7 +144,8 @@ public class Vision {
 		setTargetPipeline(0);
 	}
 	
-	/** Configures the vision pipeline to work with the vision target (min exposure, LEDs on) and pauses for a given amount of milliseconds */
+	/** Configures the vision pipeline to work with the vision target (min exposure, LEDs on) and pauses for a given
+	 * amount of milliseconds */
 	public void setTargetPipeline(int timeoutMs) {
 		if ((!robot.getAutoMode() || robot.isAutonomous())) {
 			turnOnLED();
@@ -159,7 +164,8 @@ public class Vision {
 		return getDouble("ta", 0);
 	}
 	
-	/** Returns how far off center the found object is in the X direction (positive value means the object is to the right of center, negative value means the object is to the left of center) */
+	/** Returns how far off center the found object is in the X direction (positive value means the object is to the
+	 * right of center, negative value means the object is to the left of center) */
 	public double getErrorX() {
 		return getDouble("tx", 0);
 	}
@@ -170,12 +176,14 @@ public class Vision {
 			latestErrorX = getDouble("tx", 0);
 	}
 	
-	/** Returns the latest error in the x direction (used to enable the limelight to remember which direction to scan in) */
+	/** Returns the latest error in the x direction (used to enable the limelight to remember which direction to scan
+	 * in) */
 	public double getLatestErrorX() {
 		return latestErrorX;
 	}
 	
-	/** Returns how far off center the found object is in the Y direction (positive value means the object is above center, negative value means the object is to below center) */
+	/** Returns how far off center the found object is in the Y direction (positive value means the object is above
+	 * center, negative value means the object is to below center) */
 	public double getErrorY() {
 		return getDouble("ty", 0);
 	}

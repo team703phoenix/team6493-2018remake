@@ -11,7 +11,8 @@ public class Utility {
 		}
 	}
 	
-	/** Toggles a value if a button is pressed (toggle[0] should be set to the default value, toggle[1] should always be set to true), returns true if the value was just toggled */ 
+	/** Toggles a value if a button is pressed (toggle[0] should be set to the default value, 
+	 * toggle[1] should always be set to true), returns true if the value was just toggled */ 
 	public static boolean toggle(boolean[] toggle, boolean button) {
 		// toggle[0] is the toggled value
 		// toggle[1] indicates if toggle[0] can be toggled (prevents rapid toggling)

@@ -18,12 +18,12 @@ public class DriveTrain {
 	
 	// Drive constants
 	private final double WHEEL_DIAMETER = RobotMap.DRIVETRAIN_WHEEL_DIAMETER;
-	private final double ACCELERATION_RATE = 0.07; // 0.10 was preferred for driving (2017 robot) (lower value accelerates slower, higher value accelerates faster)
-	private final double ACCELERATION_ACCEPTED_RANGE = 0.10; // 0.15 was used for driving with 0.10 acceleration rate
+	private final double ACCELERATION_RATE = 0.07; // (lower value accelerates slower, higher value accelerates faster)
+	private final double ACCELERATION_ACCEPTED_RANGE = 0.10;
 	
 	// Gyro constants
 	private final double GYRO_CORRECTION_SCALER = 0.05;  // 0.08 for low gear
-	private final double GYRO_SCALER = 1.02; //1.025; // 1.02 for roborio gyro (lower value makes it turn more, higher value makes it turn less) 1.065
+	private final double GYRO_SCALER = 1.02; // (lower value makes it turn more, higher value makes it turn less)
 	
 	// Encoder constants
 	private final int TICKS_PER_ROTATION = 750;
@@ -88,12 +88,14 @@ public class DriveTrain {
 
 	/** Drive the robot using the given cont via tank drive */
 	public void tankDrive() {
-		tankDrive(-robot.driverCont.getRawAxis(RobotMap.DRIVE_LEFT), -robot.driverCont.getRawAxis(RobotMap.DRIVE_RIGHT));
+		tankDrive(-robot.driverCont.getRawAxis(RobotMap.DRIVE_LEFT),
+				-robot.driverCont.getRawAxis(RobotMap.DRIVE_RIGHT));
 	}
 	
 	/** Drive the robot using the given cont via arcade drive */
 	public void arcadeDrive() {
-		arcadeDrive(-robot.driverCont.getRawAxis(RobotMap.DRIVE_FORWARD), robot.driverCont.getRawAxis(RobotMap.DRIVE_TURN));
+		arcadeDrive(-robot.driverCont.getRawAxis(RobotMap.DRIVE_FORWARD),
+				robot.driverCont.getRawAxis(RobotMap.DRIVE_TURN));
 	}
 	
 	//*************************************************************** 
@@ -184,7 +186,8 @@ public class DriveTrain {
 		
 		double error = 0;
 		
-		while (Math.abs(getLeftEncPosition()) < distanceInTicks && Math.abs(getRightEncPosition()) < distanceInTicks && robot.isAutonomous() && robot.isEnabled()) {
+		while (Math.abs(getLeftEncPosition()) < distanceInTicks && Math.abs(getRightEncPosition()) < distanceInTicks &&
+				robot.isAutonomous() && robot.isEnabled()) {
 			error = (distanceInTicks - Math.abs(getLeftEncPosition())) * kP;
 			if (reversed)
 				error = -error;
@@ -210,7 +213,7 @@ public class DriveTrain {
 		resetGyro();
 		final double MIN_SPEED = (angleInDegrees < 0) ? -0.25 : 0.25; // 0.2
 		final double MAX_SPEED = (angleInDegrees < 0) ? -0.5 : 0.5;
-		final double kP = 0.015;  // 0.016 //0.03 works well for low gear (lower value means slower deceleration, higher value means faster deceleration)
+		final double kP = 0.015; // (lower value means slower deceleration, higher value means faster deceleration)
 		double error = 0;
 		
 		while (Math.abs(getGyroAngle()) < Math.abs(angleInDegrees) && robot.isAutonomous() && robot.isEnabled()) {

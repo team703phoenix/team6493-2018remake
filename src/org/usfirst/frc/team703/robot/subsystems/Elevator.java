@@ -29,17 +29,15 @@ public class Elevator {
     	}
     }
     
-    public void up(boolean up) {
-    	if (up)
-    		move(1);
-    	else
-    		move(0);
+    public void up() {
+    	move(1);
     }
     
-    public void down(boolean down) {
-    	if (down)
-    		move(-1);
-    	else
-    		move(0);
+    public void down() {
+    	move(-1);
+    }
+    
+    public void stop() {
+    	move(0);
     }
 }
