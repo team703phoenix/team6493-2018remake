@@ -37,9 +37,10 @@ public class RobotMap {
 	public static final int ARM_MOTOR_LEFT = 9;
 	public static final int ARM_MOTOR_RIGHT = 10;
 	
-	public static final int LEFT_DRIVER = 0;
-	public static final int RIGHT_DRIVER = 1;
-	public static final int OPERATOR = 2;
+	public static final double ELEVATOR_DEADBAND = 0.1;
+	
+	public static final int DRIVER = 0;
+	public static final int OPERATOR = 1;
 	  
 	public static final int LEFT_ENCODER_CHANNEL_A = 0;
 	public static final int LEFT_ENCODER_CHANNEL_B = 1;
@@ -55,18 +56,19 @@ public class RobotMap {
 	
 	/* Button Mapping for Driving */
 	public static final int DRIVE_LEFT = 1;
-	public static final int DRIVE_RIGHT = 1;
+	public static final int DRIVE_RIGHT = 3;
 	public static final int DRIVE_FORWARD = 1;
 	public static final int DRIVE_TURN = 0;
 
 	/* Button Mapping for Elevator */
-	public static final int ELEVATOR_UP = 5;
-	public static final int ELEVATOR_DOWN = 6;
+	public static final int ELEVATOR_CONTROL = 1;
 	
 	/* Button Mapping for Arms */
 	public static final int ARM_LEFT = 2;
 	public static final int ARM_RIGHT = 3;
-	public static final int TOGGLE_ARM = 4;
+	public static final int[] ARM_SHOOT = {5, 6};
+	public static final int TOGGLE_ARM_OPEN = 10;
+	public static final int TOGGLE_ARM_UP = 9;
 	
 	/* Button Mapping for Vision Functions */
 	public static final int VISION_STOP = 15; // DUMMY VALUE

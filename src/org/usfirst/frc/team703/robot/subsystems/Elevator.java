@@ -18,24 +18,28 @@ public class Elevator {
 
         liftMotorSecunde.follow(liftMotorPrime);
     }
-
-    public void up(boolean move){
-        if(move) {
-            brake.set(!move);
-            liftMotorPrime.set(1);
-        }else{
-            liftMotorPrime.set(0);
-            brake.set(!move);
-        }
+    
+    public void move(double axis) {
+    	if (Math.abs(axis) > RobotMap.ELEVATOR_DEADBAND) {
+    		liftMotorPrime.set(axis);
+    		brake.set(false);
+    	} else {
+    		liftMotorPrime.set(0);
+    		brake.set(true);
+    	}
     }
-
-    public void down(boolean move) {
-        if (move) {
-            brake.set(!move);
-            liftMotorPrime.set(-1);
-        } else {
-            liftMotorPrime.set(0);
-            brake.set(!move);
-        }
+    
+    public void up(boolean up) {
+    	if (up)
+    		move(1);
+    	else
+    		move(0);
+    }
+    
+    public void down(boolean down) {
+    	if (down)
+    		move(-1);
+    	else
+    		move(0);
     }
 }

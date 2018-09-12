@@ -1,5 +1,6 @@
 package org.usfirst.frc.team703.robot;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import org.usfirst.frc.team703.robot.subsystems.*;
@@ -7,8 +8,7 @@ import org.usfirst.frc.team703.robot.subsystems.*;
 public class Robot extends IterativeRobot {
 	private String switchSetup;
 
-	public Joystick leftJoy = new Joystick(RobotMap.LEFT_DRIVER);
-	public Joystick rightJoy = new Joystick(RobotMap.RIGHT_DRIVER);
+	public Joystick driverCont = new Joystick(RobotMap.DRIVER);
 	public Joystick cont = new Joystick(RobotMap.OPERATOR);
 
 	public DriveTrain drive;
@@ -31,6 +31,7 @@ public class Robot extends IterativeRobot {
 		intake = new Arms();
 		
 		auton = new AutonHandler(drive, lift, intake);
+		auton.publishDashboard();
 	}
 	
 	public void autonomousInit() {
@@ -42,7 +43,7 @@ public class Robot extends IterativeRobot {
 	
 	public void autonomousPeriodic() {
 		if (!autoEnd) {
-			auton.runAuton(switchSetup, selection, position, false);
+			//auton.runAuton(switchSetup, selection, position, false);
 		}
 		
 		autoEnd = true;
@@ -53,33 +54,12 @@ public class Robot extends IterativeRobot {
 	}
 	
 	public void teleopPeriodic() {
-		if(cont.getRawButton(RobotMap.TOGGLE_ARM) && armToggle) {
-			if(intake.armsOpen) {
-				intake.close();
-			}else {
-				intake.open();
-			}
-			armToggle = false;
-		}else if(cont.getRawButton(RobotMap.TOGGLE_ARM)) {
-			armToggle = true;
-		}
-		
-		if(cont.getRawButton(RobotMap.ELEVATOR_UP)){
-			moveUp = true;
-		}else{
-			moveUp = false;
-		}
-
-		if(cont.getRawButton(RobotMap.ELEVATOR_DOWN)){
-			moveDown = true;
-		}else{
-			moveDown = false;
-		}
-
 		drive.tankDrive();
-		intake.setSpeed(cont.getRawAxis(RobotMap.ARM_LEFT),cont.getRawAxis(RobotMap.ARM_RIGHT));
-		lift.up(moveUp);
-		lift.down(moveDown);
+		intake.setSpeed(cont.getRawAxis(RobotMap.ARM_LEFT),cont.getRawAxis(RobotMap.ARM_RIGHT),
+				cont.getRawButton(RobotMap.ARM_SHOOT[0]) && cont.getRawButton(RobotMap.ARM_SHOOT[1]));
+		intake.toggleOpen(cont.getRawButton(RobotMap.TOGGLE_ARM_OPEN));
+		intake.toggleUp(cont.getRawButton(RobotMap.TOGGLE_ARM_UP));
+		lift.move(cont.getRawAxis(RobotMap.ELEVATOR_CONTROL));
 	}
 	
 	//*************************************************************** 

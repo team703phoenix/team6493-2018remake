@@ -1,14 +1,30 @@
 package org.usfirst.frc.team703.robot.subsystems;
 
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import org.usfirst.frc.team703.robot.utilities.Utility;
+
 public class AutonHandler {
+	/* My selectors iterate downwards from the chosen selection to the
+     * next nearest in case the color is not in our favor. To instead make
+     * it absolute, set this variable to true & put something in the "defaul()" method */
+	
+	// Dashboard inputs
+	private String startingPos, gameData;
+	private boolean isAbsolute;
+	private int destination;
+	
     private final DriveTrain drive;
     private final Elevator lift;
     private final Arms intake;
-
-    /* My selectors iterate downwards from the chosen selection to the
-     * next nearest in case the color is not in our favor. To instead make
-     * it absolute, set this variable to true & put something in the "defaul()" method */
-    private boolean isAbsolute;
+    
+    // Sendable choosers
+ 	private SendableChooser<String> positionInput = new SendableChooser<>();
+ 	private SendableChooser<Boolean> destinationTypeInput = new SendableChooser<>();
+ 	private SendableChooser<Integer> destinationInput = new SendableChooser<>();
+ 	private SendableChooser<String> switchSideInput = new SendableChooser<>();
+ 	private SendableChooser<String> scaleSideInput = new SendableChooser<>();
 
     public AutonHandler(DriveTrain drive, Elevator lift, Arms intake) {
         this.drive = drive;
@@ -97,10 +113,11 @@ public class AutonHandler {
         } else {
             if (gameData.charAt(selection - 1) == 'R') {
                 switch (selection) {
-                    case 1:nearSwitch(false);
-                    case 2:scale();
-                    case 3:farSwitch(false);
-                    default: throw new RuntimeException("Valid inputs for the selection are 0, 1, 2, or 3.");
+                	case -1:break;
+                    case 1:nearSwitch(false); break;
+                    case 2:scale(); break;
+                    case 3:farSwitch(false); break;
+                    default: throw new RuntimeException("Valid inputs for the selection are -1, 0, 1, 2, or 3.");
                 }
 
             } else {
@@ -151,39 +168,106 @@ public class AutonHandler {
     private void switchLiftAndShoot() {
         /* TODO: Figure out how Keeler's code handles the lifting & put in? */
         lift.up(true);
-        sleep(500);        
+        Utility.sleep(500);        
         lift.up(false);
 
         /* TODO: Keeler what the hell do I set the speed & wait 
          * and are positive speeds in or out */
         intake.setSpeed(1, 1);
-        sleep(1000);
+        Utility.sleep(1000);
         intake.setSpeed(0, 0);
     }
 
     private void scaleLiftAndShoot() {
         /* TODO: Figure out how Keeler's code handles the lifting & put in? */
         lift.up(true);
-        sleep(1000);        
+        Utility.sleep(1000);        
         lift.up(false);
 
         /* TODO: Keeler what the hell do I set the speed & wait 
          * and are positive speeds in or out */
         intake.setSpeed(1, 1);
-        sleep(1000);
+        Utility.sleep(1000);
         intake.setSpeed(0, 0);
     }
 
-    private void sleep(long ms) {
-        /* Just a wrapper for Thread.sleep so I can ignore interruptedexceptions */
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException i) {
-
-        }
-    }
 
     private void defaul() {
         crossBaseline();
     }
+    
+    /** Publishes the sendable choosers that determine the autonomous path to the dashboard */
+	public void publishDashboard() {
+		// Publish starting position chooser
+		positionInput.setName("Starting position");
+		positionInput.addObject("Left position", "L");
+		positionInput.addDefault("Center position", "C");
+		positionInput.addObject("Right position", "R");
+		SmartDashboard.putData(positionInput);
+		
+		// Publish autonomous destination type chooser
+		destinationTypeInput.setName("Autonomous destination type");
+		destinationTypeInput.addObject("Absolute target", true);
+		destinationTypeInput.addDefault("Stay on current side", false);
+		SmartDashboard.putData(destinationTypeInput);
+		
+		// Publish autonomous destination chooser
+		destinationInput.setName("Autonomous destination");
+		destinationInput.addObject("Cross baseline", 0);
+		destinationInput.addObject("Near switch", 1);
+		destinationInput.addObject("Scale", 2);
+		destinationInput.addObject("Far switch", 3);
+		destinationInput.addDefault("Don't move", -1);
+		SmartDashboard.putData(destinationInput);
+		
+		// Publish switch side chooser
+		switchSideInput.setName("Switch side");
+		switchSideInput.addObject("Left switch", "Left");
+		switchSideInput.addObject("Right switch", "Right");
+		switchSideInput.addDefault("Field default", "Field default");
+		SmartDashboard.putData(switchSideInput);
+		
+		// Publish scale side chooser
+		scaleSideInput.setName("Scale side");
+		scaleSideInput.addObject("Left scale", "Left");
+		scaleSideInput.addObject("Right scale", "Right");
+		scaleSideInput.addDefault("Field default", "Field default");
+		SmartDashboard.putData(scaleSideInput);
+		
+		System.out.println("Dashboard data published!");
+		
+	}
+	
+	public void readFromDashboard() {
+		// Find starting position
+		if (positionInput.getSelected() != null)
+			startingPos = positionInput.getSelected();
+		
+		// Find destination type
+		if (destinationTypeInput.getSelected() != null)
+			isAbsolute = destinationTypeInput.getSelected();
+		
+		// Find destination
+		if (destinationInput.getSelected() != null)
+			destination = destinationInput.getSelected();
+		
+		// Find game data
+		if (DriverStation.getInstance().getGameSpecificMessage().length() > 0)
+			gameData = DriverStation.getInstance().getGameSpecificMessage();
+		else
+			gameData = "LLL";
+		
+		// Find switch side
+		if (switchSideInput.getSelected() != null && !switchSideInput.getSelected().equals("Field default"))
+			gameData = switchSideInput.getSelected().charAt(0) + gameData.substring(1);
+		
+		// Find scale side
+		if (scaleSideInput.getSelected() != null && !scaleSideInput.getSelected().equals("Field default"))
+			gameData = gameData.substring(0, 0) + scaleSideInput.getSelected().charAt(0) + gameData.substring(2);
+		
+		System.out.println("Current position: " + startingPos);
+		System.out.println("Absolute destination: " + isAbsolute);
+		System.out.println("Destination: " + destination);
+		System.out.println("Game data: " + gameData);
+	}
 }

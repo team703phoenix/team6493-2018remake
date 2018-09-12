@@ -88,12 +88,12 @@ public class DriveTrain {
 
 	/** Drive the robot using the given cont via tank drive */
 	public void tankDrive() {
-		tankDrive(-robot.leftJoy.getRawAxis(RobotMap.DRIVE_LEFT), -robot.rightJoy.getRawAxis(RobotMap.DRIVE_RIGHT));
+		tankDrive(-robot.driverCont.getRawAxis(RobotMap.DRIVE_LEFT), -robot.driverCont.getRawAxis(RobotMap.DRIVE_RIGHT));
 	}
 	
 	/** Drive the robot using the given cont via arcade drive */
 	public void arcadeDrive() {
-		arcadeDrive(-robot.leftJoy.getRawAxis(RobotMap.DRIVE_FORWARD), robot.leftJoy.getRawAxis(RobotMap.DRIVE_TURN));
+		arcadeDrive(-robot.driverCont.getRawAxis(RobotMap.DRIVE_FORWARD), robot.driverCont.getRawAxis(RobotMap.DRIVE_TURN));
 	}
 	
 	//*************************************************************** 
