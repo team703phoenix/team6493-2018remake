@@ -8,54 +8,55 @@ import org.usfirst.frc.team703.robot.utilities.Utility;
 public class Arms {
     private static WPI_TalonSRX leftArm;
     private static WPI_TalonSRX rightArm;
-    private static Solenoid open;
-    private static Solenoid up;
-    private boolean[] armsOpen = {false, true};
-    private boolean[] armsUp = {true, true};
+    private static Solenoid close;
+    private static Solenoid down;
+    private boolean[] armsClosed = {true, true};
+    private boolean[] armsDown = {false, true};
     public double mult = 1;
+    public double INTAKE_SPEED = 0.7;
 
     public Arms(){
         leftArm = new WPI_TalonSRX(RobotMap.ARM_MOTOR_LEFT);
         rightArm = new WPI_TalonSRX(RobotMap.ARM_MOTOR_RIGHT);
-        open = new Solenoid(RobotMap.PCM_CHANNEL, RobotMap.ARM_SOLENOID_CHANNEL);
-        up = new Solenoid(RobotMap.PCM_CHANNEL, RobotMap.ARM_LIFT_SOLENOID_CHANNEL);
+        close = new Solenoid(RobotMap.PCM_CHANNEL, RobotMap.ARM_SOLENOID_CHANNEL);
+        down= new Solenoid(RobotMap.PCM_CHANNEL, RobotMap.ARM_LIFT_SOLENOID_CHANNEL);
     }
 
     public void open(){
-        open.set(true);
-        armsOpen[0] = true;
+        close.set(false);
+        armsClosed[0] = false;
     }
     
     public void close() {
-    	open.set(false);
-    	armsOpen[0] = false;
+    	close.set(true);
+    	armsClosed[0] = true;
     }
     
     public void toggleOpen(boolean button) {
-    	if (Utility.toggle(armsOpen, button)) {
-    		if (armsOpen[0])
-    			open();
-    		else
+    	if (Utility.toggle(armsClosed, button)) {
+    		if (armsClosed[0])
     			close();
+    		else
+    			open();
     	}
     }
     
     public void up() {
-    	up.set(true);
-    	armsUp[0] = true;
+    	down.set(false);
+    	armsDown[0] = false;
     }
     
     public void down() {
-    	up.set(false);
-    	armsUp[0] = false;
+    	down.set(true);
+    	armsDown[0] = true;
     }
     
-    public void toggleUp(boolean button) {
-    	if (Utility.toggle(armsUp, button)) {
-    		if (armsUp[0])
-    			up();
-    		else
+    public void toggleDown(boolean button) {
+    	if (Utility.toggle(armsDown, button)) {
+    		if (armsDown[0])
     			down();
+    		else
+    			up();
     	}
     }
     

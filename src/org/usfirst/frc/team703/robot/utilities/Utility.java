@@ -7,6 +7,7 @@ public class Utility {
 		try {
 			Thread.sleep(timeInMs);
 		} catch (InterruptedException e) {
+			e.printStackTrace();
 			Thread.currentThread().interrupt();
 		}
 	}

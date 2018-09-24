@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import org.usfirst.frc.team703.robot.utilities.Utility;
+import org.usfirst.frc.team703.robot.Robot;
 
 public class AutonHandler {
 	/* My selectors iterate downwards from the chosen selection to the
@@ -11,10 +12,11 @@ public class AutonHandler {
      * it absolute, set this variable to true & put something in the "defaul()" method */
 	
 	// Constants
-	public static final int ELEVATOR_TIMEOUT_SWITCH = 500;
-	public static final int ELEVATOR_TIMEOUT_SCALE = 1000;
+	public static final int ELEVATOR_TIMEOUT_SWITCH = 1100;
+	public static final int ELEVATOR_TIMEOUT_SCALE = 2750;
 	
-	public static final int ARM_DISPENSE_TIMEOUT = 1000;
+	public static final int ARM_DISPENSE_TIMEOUT = 700;
+	public static final double ARM_SHOOT_SPEED = 0.9;
 	
 	// Dashboard inputs
 	private String startingPos, gameData;
@@ -24,6 +26,8 @@ public class AutonHandler {
     private final DriveTrain drive;
     private final Elevator lift;
     private final Arms intake;
+    private final Vision vision;
+    private final Robot robot;
     
     // Sendable choosers
  	private SendableChooser<String> positionInput = new SendableChooser<>();
@@ -34,10 +38,12 @@ public class AutonHandler {
  	private SendableChooser<String> scaleSideInput = new SendableChooser<>();
  	private SendableChooser<Integer> numOfCubesInput = new SendableChooser<>();
 
-    public AutonHandler(DriveTrain drive, Elevator lift, Arms intake) {
+    public AutonHandler(DriveTrain drive, Elevator lift, Arms intake, Vision vision, Robot robot) {
         this.drive = drive;
         this.lift = lift;
         this.intake = intake;
+        this.vision = vision;
+        this.robot = robot;
     }
 
     /* Gamedata is of format LRL with respect to the relevant alliance's
@@ -51,8 +57,7 @@ public class AutonHandler {
             case "L": leftSelector(); break;
             case "C": centerSelector(); break;
             case "R": rightSelector(); break;
-            default: throw new RuntimeException("Somehow you set the position to an invalid value. " +
-            		"It can only be L, C, or R.");
+            default: throw new RuntimeException("Somehow you set the position to an invalid value. It can only be L, C, or R.");
         }
     }
 
@@ -90,38 +95,35 @@ public class AutonHandler {
     	}
 	}
 
-    /* I'm assuming in the center we'll *always* do a switch auton. */
-    private void centerSelector() {
-    	/* TODO: Port over center auton from 703 code */
-    	
+    private void centerSelector() {	
     	if (destination != -1) { // -1 means don't move
-	        /*if (gameData.charAt(0) == 'L') {
-	            drive.driveForward(48);
-	            drive.turnLeft(90);
-	            drive.driveForward(20);
-	            drive.turnRight(90);
-	
-	             FIXME: Hey keeler, can you make sure that if the bot
-	             * runs into something it doesn't get stuck in a loop 
-	             * trying to move forward
-	             * ...
-	             * It shouldn't, encoders detect wheel rotation instead of 
-	             * distance covered, so it should still stop at the normal
-	             * point 
-	            drive.driveForward(90);
-	
-	            switchLiftAndShoot();
-	            
-	        } else {
-	            drive.driveForward(48);
-	            drive.turnRight(90);
-	            drive.driveForward(20);
-	            drive.turnLeft(90);
-	            drive.driveForward(90);
-	            
-	            switchLiftAndShoot();
-	        }*/
+    		System.out.println("START PATH");
+			drive.driveForward(20);
+			//vision.setTargetPipeline();
+			drive.turn((switchIsLeft()) ? -45 : 45);
+			drive.driveForward((switchIsLeft()) ? 65 : 59);
+			//drive.turn((switchIsLeft()) ? 45 : -45);
+			
+			//vision.driveTowardTarget(!switchIsLeft());
+			//switchLiftAndShoot();
+			vision.setCubePipeline();
+			
+			for (int i = 2; i <= numOfCubes; i++) {
+				switchLowerLift();
+				
+				drive.driveBackward(40);
+				intake.down();
+				drive.turn((switchIsLeft()) ? 45 : -45);
+				vision.pickupCube();
+				
+				drive.driveBackward(30);
+				drive.turn((switchIsLeft() ? -30 : 30));
+				vision.driveTowardTarget(switchIsLeft());
+				
+				switchLiftAndShoot();
+			}
     	}
+    	System.out.println("END IF");
     }
 
     private void rightSelector() {
@@ -148,21 +150,32 @@ public class AutonHandler {
     }
 
     private void nearSwitch() {
-    	/* TODO: Port over side switch auton from 703 code */
-    	
-        /* Get on side of the switch ? 
-        drive.driveForward(145);
-
-         Turn in the correct direction 
-        if () drive.turnRight(90); else drive.turnLeft(90);
-
-        drive.driveForward(20);
-
-        switchLiftAndShoot();*/
+    	if (switchIsAdjacent() || crossField) {
+	    	drive.driveForward(switchIsAdjacent() ? 148 : 210);
+	    	drive.turn(switchIsLeft() ? 90 : -90);
+			drive.driveForward(switchIsAdjacent() ? 16 : 180);
+		
+			if (!switchIsAdjacent()) {
+				drive.turn(switchIsLeft() ? 90 : -90);
+				drive.driveForward(62);
+				drive.turn(switchIsLeft() ? 90 : -90);
+				drive.driveForward(16);
+			}
+			
+			switchLiftAndShoot();
+    	} else {
+    		defaul();
+    	}
     }
 
-    private void scale() {
-    	/* TODO: Make scale auton */
+    private void scale() {   	
+    	if (scaleIsAdjacent()) { // No cross field option for scale
+    		drive.driveForward(305);
+    		drive.turn(scaleIsLeft() ? 90 : -90);
+    		drive.driveForward(13);
+    		
+    		scaleLiftAndShoot();
+    	}
     	
         /* Should be close to the scale 
         drive.driveForward(288);
@@ -171,34 +184,37 @@ public class AutonHandler {
     }
 
     private void crossBaseline() {
-    	/* TODO: Port over baseline auton from 703 code */
-    	
-        /* Google says the baseline is 120 inches forward? 
-        drive.driveForward(120);*/
+        drive.driveForward(120);
     }
 
-    private void switchLiftAndShoot() {
-        lift.up();
-        Utility.sleep(ELEVATOR_TIMEOUT_SWITCH);        
-        lift.stop();
-
-        /* TODO: Keeler what the hell do I set the speed & wait 
-         * and are positive speeds in or out */
-        intake.setSpeed(-1, -1);
-        Utility.sleep(ARM_DISPENSE_TIMEOUT);
-        intake.setSpeed(0, 0);
+    public void switchLiftAndShoot() {
+    	if (robot.isAutonomous() && robot.isEnabled()) {
+	        lift.up();
+	        Utility.sleep(ELEVATOR_TIMEOUT_SWITCH);        
+	        lift.stop();
+	
+	        intake.setSpeed(-ARM_SHOOT_SPEED, -ARM_SHOOT_SPEED);
+	        Utility.sleep(ARM_DISPENSE_TIMEOUT);
+	        intake.setSpeed(0, 0);
+    	}
+    }
+    
+    public void switchLowerLift() {
+    	if (robot.isAutonomous() && robot.isEnabled()) {
+	    	lift.goToBottom();
+    	}
     }
 
-    private void scaleLiftAndShoot() {
-        lift.up();
-        Utility.sleep(ELEVATOR_TIMEOUT_SCALE);        
-        lift.stop();
-
-        /* TODO: Keeler what the hell do I set the speed & wait 
-         * and are positive speeds in or out */
-        intake.setSpeed(-1, -1);
-        Utility.sleep(ARM_DISPENSE_TIMEOUT);
-        intake.setSpeed(0, 0);
+    public void scaleLiftAndShoot() {
+    	if (robot.isAutonomous() && robot.isEnabled()) {
+	        lift.up();
+	        Utility.sleep(ELEVATOR_TIMEOUT_SCALE);        
+	        lift.stop();
+	        
+	        intake.setSpeed(-ARM_SHOOT_SPEED, -ARM_SHOOT_SPEED);
+	        Utility.sleep(ARM_DISPENSE_TIMEOUT);
+	        intake.setSpeed(0, 0);
+    	}
     }
 
 
@@ -236,14 +252,14 @@ public class AutonHandler {
 		SmartDashboard.putData(destinationInput);
 		
 		// Publish switch side chooser
-		switchSideInput.setName("Switch side");
+		switchSideInput.setName("Switch side (for testing only)");
 		switchSideInput.addObject("Left switch", "Left");
 		switchSideInput.addObject("Right switch", "Right");
 		switchSideInput.addDefault("Field default", "Field default");
 		SmartDashboard.putData(switchSideInput);
 		
 		// Publish scale side chooser
-		scaleSideInput.setName("Scale side");
+		scaleSideInput.setName("Scale side (for testing only)");
 		scaleSideInput.addObject("Left scale", "Left");
 		scaleSideInput.addObject("Right scale", "Right");
 		scaleSideInput.addDefault("Field default", "Field default");
@@ -289,7 +305,7 @@ public class AutonHandler {
 		
 		// Find scale side
 		if (scaleSideInput.getSelected() != null && !scaleSideInput.getSelected().equals("Field default"))
-			gameData = gameData.substring(0, 0) + scaleSideInput.getSelected().charAt(0) + gameData.substring(2);
+			gameData = gameData.substring(0, 1) + scaleSideInput.getSelected().charAt(0) + gameData.substring(2);
 		
 		// Find number of cubes
 		if (numOfCubesInput.getSelected() != null)
@@ -299,5 +315,21 @@ public class AutonHandler {
 		System.out.println("Absolute destination: " + isAbsolute);
 		System.out.println("Destination: " + destination);
 		System.out.println("Game data: " + gameData);
+	}
+	
+	public boolean switchIsAdjacent() {
+		return gameData.charAt(0) == startingPos.charAt(0);
+	}
+	
+	public boolean switchIsLeft() {
+		return gameData.charAt(0) == 'L';
+	}
+	
+	public boolean scaleIsAdjacent() {
+		return gameData.charAt(1) == startingPos.charAt(0);
+	}
+	
+	public boolean scaleIsLeft() {
+		return gameData.charAt(1) == 'L';
 	}
 }

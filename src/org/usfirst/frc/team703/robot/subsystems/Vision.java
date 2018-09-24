@@ -11,6 +11,9 @@ public class Vision {
 	// Constants
 	private final double TURNING_SCALER = 0.015;
 	
+	private final int PICKUP_TIMEOUT = 1500;
+	private final int PICKUP_PAUSE_TIMEOUT = 100;
+	
 	// Robot
 	private Robot robot;
 	
@@ -29,7 +32,7 @@ public class Vision {
 	/** Scans the area to find the given object */
 	public void scan(boolean scanLeft) {
 		if (!hasValidTarget() && (robot.getAutoMode()) ? robot.isAutonomous() :
-			!robot.cont.getRawButton(RobotMap.VISION_STOP))
+			!robot.driverCont.getRawButton(RobotMap.VISION_STOP))
 			robot.drive.arcadeDrive(0, (scanLeft) ? -0.5 : 0.5);
 	}
 	
@@ -42,8 +45,8 @@ public class Vision {
 	/** Drives toward a target made of vision tape */
 	public void driveTowardTarget(boolean scanLeft) {
 		setTargetPipeline(200);
-		driveTowardObject(7, scanLeft); // final percentage of screen
-		robot.drive.driveForward(12);
+		driveTowardObject(12, scanLeft); // final percentage of screen
+		robot.drive.driveForward(7);
 	}
 	
 	/** Picks up a power cube, using the latest error in the x direction to determine which direction to scan in */
@@ -54,6 +57,19 @@ public class Vision {
 	/** Picks up a power cube */
 	public void pickupCube(boolean scanLeft) {
 		/* TODO: Make pickupCube function */
+		
+		if ((robot.getAutoMode()) ? robot.isAutonomous() : !robot.driverCont.getRawButton(RobotMap.VISION_STOP)) {
+			robot.intake.down();
+			robot.intake.open();
+			driveTowardCubeWithoutStopping(scanLeft);
+			robot.intake.setSpeed(robot.intake.INTAKE_SPEED, robot.intake.INTAKE_SPEED);
+			Utility.sleep(PICKUP_TIMEOUT);
+			robot.intake.setSpeed(0, 0);
+			robot.intake.close();
+			robot.intake.up();
+		}
+		robot.drive.forcedTankDrive(0, 0);
+		Utility.sleep(PICKUP_PAUSE_TIMEOUT);
 		
 		/* robot.arm.lower();
 		driveTowardCubeWithoutStopping(scanLeft);
@@ -85,11 +101,11 @@ public class Vision {
 	/** Drives toward an object without stopping once it reaches the object */
 	private void driveTowardObjectWithoutStopping(double finalPercentage, boolean scanLeft) {
 		while (getPercentageOfScreen() < finalPercentage && ((robot.getAutoMode()) ? robot.isAutonomous() :
-			!robot.cont.getRawButton(RobotMap.VISION_STOP))) {
+			!robot.driverCont.getRawButton(RobotMap.VISION_STOP))) {
 			if (!hasValidTarget())
 				scan(scanLeft);				
 			else
-				robot.drive.arcadeDrive(0.9, getErrorX() * TURNING_SCALER);
+				robot.drive.arcadeDrive(0.6, getErrorX() * TURNING_SCALER);
 		}
 	}
 	
@@ -108,7 +124,7 @@ public class Vision {
 		
 		setTargetPipeline(250);
 		
-		while (robot.isEnabled() && !robot.cont.getRawButton(RobotMap.VISION_STOP)) {
+		while (robot.isEnabled() && !robot.driverCont.getRawButton(RobotMap.VISION_STOP)) {
 			if (!hasValidTarget())
 				scan(latestErrorX < 0);
 			else {

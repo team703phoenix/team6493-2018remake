@@ -23,7 +23,7 @@ public class RobotMap {
 
 	public static final double DRIVE_DEADBAND = 0.1;
 	public static final double ARM_DEADBAND = 0.1;
-	public static final double ELEVATOR_DEADBAND = 0.1;
+	public static final double ELEVATOR_DEADBAND = 0.3;
 
 	public static final int PRIMARY_LIFT_MOTOR_CHANNEL = 5;
 	public static final int SECONDARY_LIFT_MOTOR_CHANNEL = 6;
@@ -34,6 +34,8 @@ public class RobotMap {
 
 	public static final int ARM_SOLENOID_CHANNEL = 1;
 	public static final int ARM_LIFT_SOLENOID_CHANNEL = 2;
+	
+	public static final int LOWER_LIMIT_SWITCH_CHANNEL = 0;
 
 	public static final int ARM_MOTOR_LEFT = 9;
 	public static final int ARM_MOTOR_RIGHT = 10;
@@ -49,7 +51,7 @@ public class RobotMap {
 	public static final int QUADRATURE_FACTOR = 4;
 	public static final int ENCODER_FACTOR = 360;
 	public static final int PULSES_PER_REVOLUTION = QUADRATURE_FACTOR * ENCODER_FACTOR;
-	public static final int DRIVETRAIN_WHEEL_DIAMETER = 8;
+	public static final int DRIVETRAIN_WHEEL_DIAMETER = 6;
 	public static final double DRIVETRAIN_WHEEL_CIRCUMFERENCE = DRIVETRAIN_WHEEL_DIAMETER * Math.PI;
 	public static final double DRIVETRAIN_ENCODER_INCHES_PER_PULSE = DRIVETRAIN_WHEEL_CIRCUMFERENCE / PULSES_PER_REVOLUTION;
 	
@@ -67,10 +69,11 @@ public class RobotMap {
 	public static final int ARM_RIGHT = 3;
 	public static final int[] ARM_SHOOT = {5, 6};
 	public static final int TOGGLE_ARM_OPEN = 10;
-	public static final int TOGGLE_ARM_UP = 9;
+	public static final int TOGGLE_ARM_DOWN = 9;
 	
 	/* Button Mapping for Vision Functions */
-	public static final int VISION_STOP = 15; // DUMMY VALUE
+	public static final int VISION_STOP = 1;
+	public static final int VISION_LIGHT_TOGGLE = 3;
     
 	// For example to map the left and right motors, you could define the
 	// following variables to use with your drivetrain subsystem.

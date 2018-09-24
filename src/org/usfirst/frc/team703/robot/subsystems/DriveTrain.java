@@ -2,11 +2,14 @@ package org.usfirst.frc.team703.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
+
 import org.usfirst.frc.team703.robot.Robot;
 import org.usfirst.frc.team703.robot.RobotMap;
 import org.usfirst.frc.team703.robot.utilities.Utility;
 
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.Timer;
 
 public class DriveTrain {
 	
@@ -22,23 +25,29 @@ public class DriveTrain {
 	private final double ACCELERATION_ACCEPTED_RANGE = 0.10;
 	
 	// Gyro constants
-	private final double GYRO_CORRECTION_SCALER = 0.05;  // 0.08 for low gear
-	private final double GYRO_SCALER = 1.02; // (lower value makes it turn more, higher value makes it turn less)
+	private final double GYRO_CORRECTION_SCALER = 0.08;  // 0.08 for low gear
+	private final double GYRO_SCALER = 1.04; // (lower value makes it turn more, higher value makes it turn less)
 	
 	// Encoder constants
-	private final int TICKS_PER_ROTATION = 750;
+	private final int TICKS_PER_ROTATION = 925;
+	private final int ENCODER_STUCK_RANGE = inchesToTicks(1); // 1 inch per second
+	private final double ENCODER_STUCK_GRACE_PERIOD = 1.0; // 1 second
 	
 	// Drive variables
 	private double leftDrive, rightDrive;
 	
 	// Motor controllers
-	private WPI_TalonSRX left1, left2, left3, right1, right2, right3;
+	private WPI_TalonSRX left1, right1;
+	private WPI_VictorSPX left2, right2;
 	
 	// Robot
 	private Robot robot;
 	
 	// Gyro
 	private ADXRS450_Gyro gyro;
+	
+	// Timer used to see if the robot is stuck during autonomous
+	Timer stuckTimer = new Timer();
 	
 	//*************************************************************** 
 	//
@@ -62,22 +71,11 @@ public class DriveTrain {
 	public DriveTrain(int left1ID, int left2ID, int right1ID, int right2ID, Robot robot) {
 		this(left1ID, right1ID, robot);
 		
-		left2 = new WPI_TalonSRX(left2ID);
+		left2 = new WPI_VictorSPX(left2ID);
 		left2.follow(left1);
 
-		right2 = new WPI_TalonSRX(right2ID);
+		right2 = new WPI_VictorSPX(right2ID);
 		right2.follow(right1);
-	}
-	
-	/** Creates a 6 motor drive train */
-	public DriveTrain(int left1ID, int left2ID, int left3ID, int right1ID, int right2ID, int right3ID, Robot robot) {
-		this(left1ID, left2ID, right1ID, right2ID, robot);
-		
-		left3 = new WPI_TalonSRX(left3ID);
-		left3.follow(left1);
-		
-		right3 = new WPI_TalonSRX(right3ID);
-		right3.follow(right1);
 	}
 	
 	//*************************************************************** 
@@ -89,6 +87,12 @@ public class DriveTrain {
 	/** Drive the robot using the given cont via tank drive */
 	public void tankDrive() {
 		tankDrive(-robot.driverCont.getRawAxis(RobotMap.DRIVE_LEFT),
+				-robot.driverCont.getRawAxis(RobotMap.DRIVE_RIGHT));
+	}
+	
+	/** Drive the robot using the given cont via tank drive */
+	public void forcedTankDrive() {
+		forcedTankDrive(-robot.driverCont.getRawAxis(RobotMap.DRIVE_LEFT),
 				-robot.driverCont.getRawAxis(RobotMap.DRIVE_RIGHT));
 	}
 	
@@ -106,6 +110,7 @@ public class DriveTrain {
 	
 	/** Drives forward a given distance in inches */
 	public void driveForward(double distanceInInches) {
+		System.out.println("DRIVE FORWARD START");
 		encoderDrive(distanceInInches, false);
 	}
 	
@@ -141,15 +146,14 @@ public class DriveTrain {
 	/** Drives the robot using the given variables via tank drive without an acceleration curve */
 	public void forcedTankDrive(double leftDrive, double rightDrive) {
 		if (Math.abs(leftDrive) > RobotMap.DRIVE_DEADBAND)
-			left1.set(-leftDrive);
+			left1.set(leftDrive);
 		else
 			left1.set(0);
 		
 		if (Math.abs(rightDrive) > RobotMap.DRIVE_DEADBAND)
-			right1.set(rightDrive);
+			right1.set(-rightDrive);
 		else
 			right1.set(0);
-			
 	}
 	
 	/** Drive the robot using the given variables via arcade drive */
@@ -177,17 +181,16 @@ public class DriveTrain {
 	/** Drives forward or backward a given distance at a given speed using encoders */
 	private void encoderDrive(double distanceInInches, boolean reversed) {
 		final double MIN_SPEED = reversed ? -0.3 : 0.3;
-		final double MAX_SPEED = reversed ? -0.7 : 0.7;
+		final double MAX_SPEED = reversed ? -0.8 : 0.8;
 		final double kP = 0.0003; //0.0002 for high gear
-		
+				
 		double distanceInTicks = inchesToTicks(distanceInInches);
 		resetEncoders();
 		resetGyro();
 		
 		double error = 0;
 		
-		while (Math.abs(getLeftEncPosition()) < distanceInTicks && Math.abs(getRightEncPosition()) < distanceInTicks &&
-				robot.isAutonomous() && robot.isEnabled()) {
+		while ((Math.abs(getLeftEncPosition()) < distanceInTicks || Math.abs(getRightEncPosition()) < distanceInTicks) && robot.isAutonomous() && robot.isEnabled()) {
 			error = (distanceInTicks - Math.abs(getLeftEncPosition())) * kP;
 			if (reversed)
 				error = -error;
@@ -203,17 +206,30 @@ public class DriveTrain {
 		forcedTankDrive(0, 0);
 	}
 	
+	
 	/** Drives the robot at a given speed, using the gyro to correct it if it steers off course */
 	public void gyroAssistedDrive(double speed) {
-		forcedArcadeDrive(speed, -getGyroCorrectionAngle());
+		arcadeDrive(speed, -getGyroCorrectionAngle());
 	}
+	
+	/** Turns a given number of degrees (positive angle turns right, negative angle turns left */
+	/*public void turn(double angleInDegrees) {
+		resetGyro();
+		final double TURN_SPEED = (angleInDegrees < 0) ? -0.9 : 0.9;
+		while (Math.abs(getGyroAngle()) < Math.abs(angleInDegrees) && robot.isAutonomous() && robot.isEnabled()) {
+			System.out.println("TURNING: " + getGyroAngle());
+			forcedArcadeDrive(0, TURN_SPEED);
+		}
+		
+		forcedTankDrive(0, 0);
+	}*/
 	
 	/** Turns a given number of degrees (positive angle turns right, negative angle turns left */
 	public void turn(double angleInDegrees) {
 		resetGyro();
-		final double MIN_SPEED = (angleInDegrees < 0) ? -0.25 : 0.25; // 0.2
-		final double MAX_SPEED = (angleInDegrees < 0) ? -0.5 : 0.5;
-		final double kP = 0.015; // (lower value means slower deceleration, higher value means faster deceleration)
+		final double MIN_SPEED = (angleInDegrees < 0) ? -0.5 : 0.5; // 0.2
+		final double MAX_SPEED = (angleInDegrees < 0) ? -0.9 : 0.9;
+		final double kP = 0.015;  // 0.016 //0.03 works well for low gear (lower value means slower deceleration, higher value means faster deceleration)
 		double error = 0;
 		
 		while (Math.abs(getGyroAngle()) < Math.abs(angleInDegrees) && robot.isAutonomous() && robot.isEnabled()) {
@@ -239,15 +255,29 @@ public class DriveTrain {
 	//***************************************************************
 	
 	/** Converts inches to encoder ticks */
-	private double inchesToTicks(double inches) {
-		return inches / (WHEEL_DIAMETER * Math.PI) * TICKS_PER_ROTATION;
+	private int inchesToTicks(double inches) {
+		return (int)(inches / (WHEEL_DIAMETER * Math.PI) * TICKS_PER_ROTATION);
 	}
 	
 	/** Resets the left and right encoders */
 	public void resetEncoders() {
 		left1.getSensorCollection().setQuadraturePosition(0, 0);
 		right1.getSensorCollection().setQuadraturePosition(0, 0);
-		Utility.sleep(200);
+		//Utility.sleep(500);
+		while (Math.abs(getLeftEncPosition()) > 200 || Math.abs(getRightEncPosition()) > 200)
+			System.out.println("Resetting... Left enc: " + getLeftEncPosition() + " | Right enc: " + getRightEncPosition());
+		
+		System.out.println("Encoders reset. Left enc: " + getLeftEncPosition() + " | Right enc: " + getRightEncPosition());
+	}
+	
+	public boolean checkIfStuck() {	
+		if (Math.abs(getLeftEncVelocity()) < ENCODER_STUCK_RANGE ||
+				Math.abs(getRightEncVelocity()) < ENCODER_STUCK_RANGE) {
+			System.out.println("Robot is stuck. Halting...");
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 	//*************************************************************** 
@@ -280,16 +310,22 @@ public class DriveTrain {
 	
 	/** Returns the left encoder position */
 	public int getLeftEncPosition() {
-		int encPosition = -left1.getSensorCollection().getQuadraturePosition();
-		System.out.println("Left enc: " + encPosition);
-		return encPosition;
+		return -left1.getSensorCollection().getQuadraturePosition();
+	}
+	
+	/** Returns the left encoder velocity */
+	public int getLeftEncVelocity() {
+		return -left1.getSensorCollection().getQuadratureVelocity();
 	}
 	
 	/** Returns the right encoder position */
 	public int getRightEncPosition() {
-		int encPosition = right1.getSensorCollection().getQuadraturePosition();
-		System.out.println("Right enc: " + encPosition);
-		return encPosition;
+		return right1.getSensorCollection().getQuadraturePosition();
+	}
+	
+	/** Returns the right encoder velocity */
+	public int getRightEncVelocity() {
+		return right1.getSensorCollection().getQuadratureVelocity();
 	}
 	
 }
