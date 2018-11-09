@@ -12,14 +12,17 @@ public class Arms {
     private static Solenoid down;
     private boolean[] armsClosed = {true, true};
     private boolean[] armsDown = {false, true};
+    private boolean[] creepMode = {false, true};
     public double mult = 1;
-    public double INTAKE_SPEED = 0.7;
+    public final double INTAKE_SPEED = 0.7;
+    
+    private final double CREEP_MODE_SCALER = 0.5;
 
     public Arms(){
         leftArm = new WPI_TalonSRX(RobotMap.ARM_MOTOR_LEFT);
         rightArm = new WPI_TalonSRX(RobotMap.ARM_MOTOR_RIGHT);
         close = new Solenoid(RobotMap.PCM_CHANNEL, RobotMap.ARM_SOLENOID_CHANNEL);
-        down= new Solenoid(RobotMap.PCM_CHANNEL, RobotMap.ARM_LIFT_SOLENOID_CHANNEL);
+        down = new Solenoid(RobotMap.PCM_CHANNEL, RobotMap.ARM_LIFT_SOLENOID_CHANNEL);
     }
 
     public void open(){
@@ -64,13 +67,19 @@ public class Arms {
     	if(Math.abs(speedLeft * mult) < RobotMap.ARM_DEADBAND){
             leftArm.set(0);
         }else{
-        	leftArm.set(speedLeft * mult);
+        	if (!creepMode[0])
+        		leftArm.set(speedLeft * mult);
+        	else
+        		leftArm.set(speedLeft * mult * CREEP_MODE_SCALER);
         }
         
         if(Math.abs(speedRight * mult) < RobotMap.ARM_DEADBAND){
             rightArm.set(0);
         }else{
-        	rightArm.set(-speedRight * mult);
+        	if (!creepMode[0])
+        		rightArm.set(-speedRight * mult);
+        	else
+        		rightArm.set(-speedRight * mult * CREEP_MODE_SCALER);
         }
     }
 
@@ -79,5 +88,13 @@ public class Arms {
         	setSpeed(-speedLeft, -speedRight);
         else
         	setSpeed(speedLeft, speedRight);
+    }
+    
+    public void setCreepMode(boolean creepModeOn) {
+    	creepMode[0] = creepModeOn;
+    }
+    
+    public void toggleCreepMode(boolean button) {
+    	Utility.toggle(creepMode, button);
     }
 }

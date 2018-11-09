@@ -21,8 +21,9 @@ public class DriveTrain {
 	
 	// Drive constants
 	private final double WHEEL_DIAMETER = RobotMap.DRIVETRAIN_WHEEL_DIAMETER;
-	private final double ACCELERATION_RATE = 0.07; // (lower value accelerates slower, higher value accelerates faster)
+	private final double ACCELERATION_RATE = 0.06; // (lower value accelerates slower, higher value accelerates faster)
 	private final double ACCELERATION_ACCEPTED_RANGE = 0.10;
+	private final double CREEP_MODE_SCALER = 0.5;
 	
 	// Gyro constants
 	private final double GYRO_CORRECTION_SCALER = 0.08;  // 0.08 for low gear
@@ -48,6 +49,9 @@ public class DriveTrain {
 	
 	// Timer used to see if the robot is stuck during autonomous
 	Timer stuckTimer = new Timer();
+	
+	// Control variables
+	boolean[] creepMode = {false, true};
 	
 	//*************************************************************** 
 	//
@@ -98,8 +102,8 @@ public class DriveTrain {
 	
 	/** Drive the robot using the given cont via arcade drive */
 	public void arcadeDrive() {
-		arcadeDrive(-robot.driverCont.getRawAxis(RobotMap.DRIVE_FORWARD),
-				robot.driverCont.getRawAxis(RobotMap.DRIVE_TURN));
+		arcadeDrive(-robot.driverCont.getRawAxis(RobotMap.DRIVE_FORWARD) * 0.6,
+				robot.driverCont.getRawAxis(RobotMap.DRIVE_TURN) * 0.6);
 	}
 	
 	//*************************************************************** 
@@ -110,7 +114,7 @@ public class DriveTrain {
 	
 	/** Drives forward a given distance in inches */
 	public void driveForward(double distanceInInches) {
-		System.out.println("DRIVE FORWARD START");
+		//System.out.println("DRIVE FORWARD START");
 		encoderDrive(distanceInInches, false);
 	}
 	
@@ -145,14 +149,20 @@ public class DriveTrain {
 	
 	/** Drives the robot using the given variables via tank drive without an acceleration curve */
 	public void forcedTankDrive(double leftDrive, double rightDrive) {
-		if (Math.abs(leftDrive) > RobotMap.DRIVE_DEADBAND)
-			left1.set(leftDrive);
-		else
+		if (Math.abs(leftDrive) > RobotMap.DRIVE_DEADBAND) {
+			if (!creepMode[0])
+				left1.set(leftDrive);
+			else
+				left1.set(leftDrive * CREEP_MODE_SCALER);
+	 	} else
 			left1.set(0);
 		
-		if (Math.abs(rightDrive) > RobotMap.DRIVE_DEADBAND)
-			right1.set(-rightDrive);
-		else
+		if (Math.abs(rightDrive) > RobotMap.DRIVE_DEADBAND) {
+			if (!creepMode[0])
+				right1.set(-rightDrive);
+			else
+				right1.set(-rightDrive * CREEP_MODE_SCALER);
+		} else
 			right1.set(0);
 	}
 	
@@ -180,17 +190,23 @@ public class DriveTrain {
 	
 	/** Drives forward or backward a given distance at a given speed using encoders */
 	private void encoderDrive(double distanceInInches, boolean reversed) {
-		final double MIN_SPEED = reversed ? -0.3 : 0.3;
-		final double MAX_SPEED = reversed ? -0.8 : 0.8;
+		final double MIN_SPEED = reversed ? -0.4 : 0.4;
+		final double MAX_SPEED = reversed ? -0.75 : 0.75;
 		final double kP = 0.0003; //0.0002 for high gear
 				
+		//System.out.println("DRIVE START");
+		
 		double distanceInTicks = inchesToTicks(distanceInInches);
 		resetEncoders();
 		resetGyro();
 		
 		double error = 0;
 		
-		while ((Math.abs(getLeftEncPosition()) < distanceInTicks || Math.abs(getRightEncPosition()) < distanceInTicks) && robot.isAutonomous() && robot.isEnabled()) {
+		stuckTimer.reset();
+		stuckTimer.start();
+		
+		while ((Math.abs(getLeftEncPosition()) < distanceInTicks || Math.abs(getRightEncPosition()) < distanceInTicks) && !robot.haltAutonomous()) {// && checkIfStuck() && stuckTimer.get() > ENCODER_STUCK_GRACE_PERIOD) {
+			//System.out.println("DRIVE LOOP");
 			error = (distanceInTicks - Math.abs(getLeftEncPosition())) * kP;
 			if (reversed)
 				error = -error;
@@ -202,6 +218,8 @@ public class DriveTrain {
 			else
 				gyroAssistedDrive(MAX_SPEED);
 		}
+		
+		//System.out.println("END DRIVE. Left: " + getLeftEncPosition() + " | Right: " + getRightEncPosition());
 		
 		forcedTankDrive(0, 0);
 	}
@@ -216,7 +234,7 @@ public class DriveTrain {
 	/*public void turn(double angleInDegrees) {
 		resetGyro();
 		final double TURN_SPEED = (angleInDegrees < 0) ? -0.9 : 0.9;
-		while (Math.abs(getGyroAngle()) < Math.abs(angleInDegrees) && robot.isAutonomous() && robot.isEnabled()) {
+		while (Math.abs(getGyroAngle()) < Math.abs(angleInDegrees) && !robot.haltAutonomous()) {
 			System.out.println("TURNING: " + getGyroAngle());
 			forcedArcadeDrive(0, TURN_SPEED);
 		}
@@ -228,11 +246,11 @@ public class DriveTrain {
 	public void turn(double angleInDegrees) {
 		resetGyro();
 		final double MIN_SPEED = (angleInDegrees < 0) ? -0.5 : 0.5; // 0.2
-		final double MAX_SPEED = (angleInDegrees < 0) ? -0.9 : 0.9;
-		final double kP = 0.015;  // 0.016 //0.03 works well for low gear (lower value means slower deceleration, higher value means faster deceleration)
+		final double MAX_SPEED = (angleInDegrees < 0) ? -0.85 : 0.85;
+		final double kP = 0.01;  // 0.016 //0.03 works well for low gear (lower value means slower deceleration, higher value means faster deceleration)
 		double error = 0;
 		
-		while (Math.abs(getGyroAngle()) < Math.abs(angleInDegrees) && robot.isAutonomous() && robot.isEnabled()) {
+		while (Math.abs(getGyroAngle()) < Math.abs(angleInDegrees) && !robot.haltAutonomous()) {
 			error = (Math.abs(angleInDegrees) - Math.abs(getGyroAngle())) * kP;
 			if (angleInDegrees < 0)
 				error = -error;
@@ -261,11 +279,17 @@ public class DriveTrain {
 	
 	/** Resets the left and right encoders */
 	public void resetEncoders() {
+		System.out.println("Resetting encoders...");
 		left1.getSensorCollection().setQuadraturePosition(0, 0);
 		right1.getSensorCollection().setQuadraturePosition(0, 0);
-		//Utility.sleep(500);
-		while (Math.abs(getLeftEncPosition()) > 200 || Math.abs(getRightEncPosition()) > 200)
-			System.out.println("Resetting... Left enc: " + getLeftEncPosition() + " | Right enc: " + getRightEncPosition());
+		Utility.sleep(200);
+		while (Math.abs(getLeftEncPosition()) > 200 || Math.abs(getRightEncPosition()) > 200) {
+			System.out.println("Attempting to restart encoders again...");
+			left1.getSensorCollection().setQuadraturePosition(0, 0);
+			right1.getSensorCollection().setQuadraturePosition(0, 0);
+			Utility.sleep(500);
+		}
+			//System.out.println("Resetting... Left enc: " + getLeftEncPosition() + " | Right enc: " + getRightEncPosition());
 		
 		System.out.println("Encoders reset. Left enc: " + getLeftEncPosition() + " | Right enc: " + getRightEncPosition());
 	}
@@ -288,8 +312,27 @@ public class DriveTrain {
 	
 	/** Resets the gyro angle to 0 degrees */
 	public void resetGyro() {
-		gyro.reset();
-		while (Math.abs(getGyroAngle()) > 3);
+		while (Math.abs(getGyroAngle()) > 3) {
+			gyro.reset();
+		}
+		
+		System.out.println("Gyro_reset: " + getGyroAngle());
+	}
+	
+	//*************************************************************** 
+	//
+	// GENERAL UTILITIES
+	//
+	//***************************************************************
+	
+	/** Turns creep mode on or off */
+	public void setCreepMode(boolean creepModeOn) {
+		creepMode[0] = creepModeOn;
+	}
+	
+	/** Toggles creep mode */
+	public void toggleCreepMode(boolean button) {
+		Utility.toggle(creepMode, button);
 	}
 	
 	//*************************************************************** 

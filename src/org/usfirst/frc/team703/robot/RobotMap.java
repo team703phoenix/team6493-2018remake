@@ -5,8 +5,6 @@
 /* the project.                                                               */
 /*----------------------------------------------------------------------------*/
 
-/* TODO: Assign values to dummy variables */
-
 package org.usfirst.frc.team703.robot;
 
 /**
@@ -54,6 +52,9 @@ public class RobotMap {
 	public static final int DRIVETRAIN_WHEEL_DIAMETER = 6;
 	public static final double DRIVETRAIN_WHEEL_CIRCUMFERENCE = DRIVETRAIN_WHEEL_DIAMETER * Math.PI;
 	public static final double DRIVETRAIN_ENCODER_INCHES_PER_PULSE = DRIVETRAIN_WHEEL_CIRCUMFERENCE / PULSES_PER_REVOLUTION;
+	
+	public static final int DRIVE_CREEP_MODE = 8;
+	public static final int INTAKE_CREEP_MODE = 1;
 	
 	/* Button Mapping for Driving */
 	public static final int DRIVE_LEFT = 1;

@@ -11,7 +11,7 @@ public class Vision {
 	// Constants
 	private final double TURNING_SCALER = 0.015;
 	
-	private final int PICKUP_TIMEOUT = 1500;
+	private final int PICKUP_TIMEOUT = 1100;
 	private final int PICKUP_PAUSE_TIMEOUT = 100;
 	
 	// Robot
@@ -31,7 +31,7 @@ public class Vision {
 	
 	/** Scans the area to find the given object */
 	public void scan(boolean scanLeft) {
-		if (!hasValidTarget() && (robot.getAutoMode()) ? robot.isAutonomous() :
+		if (!hasValidTarget() && (robot.getAutoMode()) ? !robot.haltAutonomous() :
 			!robot.driverCont.getRawButton(RobotMap.VISION_STOP))
 			robot.drive.arcadeDrive(0, (scanLeft) ? -0.5 : 0.5);
 	}
@@ -46,7 +46,7 @@ public class Vision {
 	public void driveTowardTarget(boolean scanLeft) {
 		setTargetPipeline(200);
 		driveTowardObject(12, scanLeft); // final percentage of screen
-		robot.drive.driveForward(7);
+		//robot.drive.driveForward(7);
 	}
 	
 	/** Picks up a power cube, using the latest error in the x direction to determine which direction to scan in */
@@ -56,9 +56,7 @@ public class Vision {
 	
 	/** Picks up a power cube */
 	public void pickupCube(boolean scanLeft) {
-		/* TODO: Make pickupCube function */
-		
-		if ((robot.getAutoMode()) ? robot.isAutonomous() : !robot.driverCont.getRawButton(RobotMap.VISION_STOP)) {
+		if ((robot.getAutoMode()) ? !robot.haltAutonomous() : !robot.driverCont.getRawButton(RobotMap.VISION_STOP)) {
 			robot.intake.down();
 			robot.intake.open();
 			driveTowardCubeWithoutStopping(scanLeft);
@@ -71,9 +69,11 @@ public class Vision {
 		robot.drive.forcedTankDrive(0, 0);
 		Utility.sleep(PICKUP_PAUSE_TIMEOUT);
 		
+		System.out.println("Cube pickup complete.");
+		
 		/* robot.arm.lower();
 		driveTowardCubeWithoutStopping(scanLeft);
-		if ((robot.getAutoMode()) ? robot.isAutonomous() : !robot.controller.getRawButton(1)) {
+		if ((robot.getAutoMode()) ? !robot.haltAutonomous() : !robot.controller.getRawButton(1)) {
 			robot.drive.forcedArcadeDrive(0.5, 0);
 			robot.arm.intake();
 		}
@@ -100,7 +100,9 @@ public class Vision {
 	
 	/** Drives toward an object without stopping once it reaches the object */
 	private void driveTowardObjectWithoutStopping(double finalPercentage, boolean scanLeft) {
-		while (getPercentageOfScreen() < finalPercentage && ((robot.getAutoMode()) ? robot.isAutonomous() :
+		System.out.println("Driving toward object...");
+		
+		while (getPercentageOfScreen() < finalPercentage && ((robot.getAutoMode()) ? !robot.haltAutonomous() :
 			!robot.driverCont.getRawButton(RobotMap.VISION_STOP))) {
 			if (!hasValidTarget())
 				scan(scanLeft);				
@@ -129,7 +131,6 @@ public class Vision {
 				scan(latestErrorX < 0);
 			else {
 				double forwardDrive = (FOLLOWING_DISTANCE - getPercentageOfScreen()) * kP;
-				System.out.println(forwardDrive);
 				if (forwardDrive < MAX_SPEED)
 					robot.drive.arcadeDrive(forwardDrive, getErrorX() * TURNING_SCALER);
 				else
@@ -148,7 +149,7 @@ public class Vision {
 	/** Configures the vision pipeline to work with the cube (max exposure, LEDs off) and pauses for a given amount of
 	 * milliseconds */
 	public void setCubePipeline(int timeoutMs) {
-		if ((!robot.getAutoMode() || robot.isAutonomous())) {
+		if ((!robot.getAutoMode() || !robot.haltAutonomous())) {
 			turnOffLED();
 			setNumber("pipeline", 0);
 			Utility.sleep(timeoutMs);
@@ -163,7 +164,7 @@ public class Vision {
 	/** Configures the vision pipeline to work with the vision target (min exposure, LEDs on) and pauses for a given
 	 * amount of milliseconds */
 	public void setTargetPipeline(int timeoutMs) {
-		if ((!robot.getAutoMode() || robot.isAutonomous())) {
+		if ((!robot.getAutoMode() || !robot.haltAutonomous())) {
 			turnOnLED();
 			setNumber("pipeline", 1);
 			Utility.sleep(timeoutMs);

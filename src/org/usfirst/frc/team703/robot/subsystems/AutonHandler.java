@@ -17,10 +17,11 @@ public class AutonHandler {
 	
 	public static final int ARM_DISPENSE_TIMEOUT = 700;
 	public static final double ARM_SHOOT_SPEED = 0.9;
+	public static final double ARM_SHOOT_SPEED_SCALE = 1.0;
 	
 	// Dashboard inputs
 	private String startingPos, gameData;
-	private boolean isAbsolute, crossField;
+	private boolean isAbsolute, crossField, prioritizeSwitch;
 	private int destination, numOfCubes;
 	
     private final DriveTrain drive;
@@ -34,6 +35,7 @@ public class AutonHandler {
  	private SendableChooser<Boolean> destinationTypeInput = new SendableChooser<>();
  	private SendableChooser<Boolean> crossFieldInput = new SendableChooser<>();
  	private SendableChooser<Integer> destinationInput = new SendableChooser<>();
+ 	private SendableChooser<Boolean> priorityInput = new SendableChooser<>();
  	private SendableChooser<String> switchSideInput = new SendableChooser<>();
  	private SendableChooser<String> scaleSideInput = new SendableChooser<>();
  	private SendableChooser<Integer> numOfCubesInput = new SendableChooser<>();
@@ -84,10 +86,13 @@ public class AutonHandler {
 	    				default: throw new RuntimeException("Valid inputs for the auton selection are -1, 0, 1, or 2.");
 	    			}
 	    		} else {
-	    			if (destination == 2)
+	    			if ((destination == 2 && prioritizeSwitch) || (destination == 1 && !prioritizeSwitch))
 	    				defaul();
 	    			else {
-	    				destination += 1;
+	    				if (prioritizeSwitch)
+	    					destination += 1;
+	    				else
+	    					destination -= 1;
 	    				leftSelector();
 	    			}
 	    		}
@@ -97,15 +102,14 @@ public class AutonHandler {
 
     private void centerSelector() {	
     	if (destination != -1) { // -1 means don't move
-    		System.out.println("START PATH");
 			drive.driveForward(20);
-			//vision.setTargetPipeline();
+			vision.setTargetPipeline();
 			drive.turn((switchIsLeft()) ? -45 : 45);
 			drive.driveForward((switchIsLeft()) ? 65 : 59);
-			//drive.turn((switchIsLeft()) ? 45 : -45);
-			
-			//vision.driveTowardTarget(!switchIsLeft());
-			//switchLiftAndShoot();
+			drive.turn((switchIsLeft()) ? 45 : -45);
+
+			vision.driveTowardTarget(!switchIsLeft());
+			switchLiftAndShoot();
 			vision.setCubePipeline();
 			
 			for (int i = 2; i <= numOfCubes; i++) {
@@ -123,7 +127,6 @@ public class AutonHandler {
 				switchLiftAndShoot();
 			}
     	}
-    	System.out.println("END IF");
     }
 
     private void rightSelector() {
@@ -138,10 +141,13 @@ public class AutonHandler {
 	    				default: throw new RuntimeException("Valid inputs for the auton selection are -1, 0, 1, or 2.");
 	    			}
 	    		} else {
-	    			if (destination == 2)
+	    			if ((destination == 2 && prioritizeSwitch) || (destination == 1 && !prioritizeSwitch))
 	    				defaul();
 	    			else {
-	    				destination += 1;
+	    				if (prioritizeSwitch)
+	    					destination += 1;
+	    				else
+	    					destination -= 1;
 	    				rightSelector();
 	    			}
 	    		}
@@ -172,9 +178,11 @@ public class AutonHandler {
     	if (scaleIsAdjacent()) { // No cross field option for scale
     		drive.driveForward(305);
     		drive.turn(scaleIsLeft() ? 90 : -90);
-    		drive.driveForward(13);
+    		//drive.driveForward(13);
     		
     		scaleLiftAndShoot();
+    	} else {
+    		crossBaseline();
     	}
     	
         /* Should be close to the scale 
@@ -188,7 +196,7 @@ public class AutonHandler {
     }
 
     public void switchLiftAndShoot() {
-    	if (robot.isAutonomous() && robot.isEnabled()) {
+    	if (!robot.haltAutonomous()) {
 	        lift.up();
 	        Utility.sleep(ELEVATOR_TIMEOUT_SWITCH);        
 	        lift.stop();
@@ -200,21 +208,22 @@ public class AutonHandler {
     }
     
     public void switchLowerLift() {
-    	if (robot.isAutonomous() && robot.isEnabled()) {
+    	if (!robot.haltAutonomous()) {
 	    	lift.goToBottom();
     	}
     }
 
     public void scaleLiftAndShoot() {
-    	if (robot.isAutonomous() && robot.isEnabled()) {
-	        lift.up();
-	        Utility.sleep(ELEVATOR_TIMEOUT_SCALE);        
-	        lift.stop();
-	        
-	        intake.setSpeed(-ARM_SHOOT_SPEED, -ARM_SHOOT_SPEED);
-	        Utility.sleep(ARM_DISPENSE_TIMEOUT);
-	        intake.setSpeed(0, 0);
-    	}
+    	System.out.println("START SHOOT (maybe?)");
+    	System.out.println("Is autonomous? " + robot.isAutonomous() + " | Is enabled? " + robot.isEnabled());
+		System.out.println("START SHOOT (fr)");
+        lift.up();
+        Utility.sleep(ELEVATOR_TIMEOUT_SCALE);        
+        lift.stop();
+        
+        intake.setSpeed(-ARM_SHOOT_SPEED_SCALE, -ARM_SHOOT_SPEED_SCALE);
+        Utility.sleep(ARM_DISPENSE_TIMEOUT);
+        intake.setSpeed(0, 0);
     }
 
 
@@ -236,6 +245,12 @@ public class AutonHandler {
 		destinationTypeInput.addObject("Absolute target", true);
 		destinationTypeInput.addDefault("Best option on current side", false);
 		SmartDashboard.putData(destinationTypeInput);
+		
+		// Publish destination priority chooser
+		priorityInput.setName("Destination priority (best option only)");
+		priorityInput.addDefault("Switch", true);
+		priorityInput.addObject("Scale", false);
+		SmartDashboard.putData(priorityInput);
 		
 		// Publish cross field chooser
 		crossFieldInput.setName("Can the robot cross the field? (absolute target only)");
@@ -284,6 +299,10 @@ public class AutonHandler {
 		// Find destination type
 		if (destinationTypeInput.getSelected() != null)
 			isAbsolute = destinationTypeInput.getSelected();
+		
+		// Find destination priority
+		if (priorityInput.getSelected() != null)
+			prioritizeSwitch = priorityInput.getSelected();
 		
 		// Find cross field instruction
 		if (crossFieldInput.getSelected() != null)

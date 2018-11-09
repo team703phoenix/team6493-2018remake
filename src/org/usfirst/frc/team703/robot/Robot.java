@@ -1,5 +1,7 @@
 package org.usfirst.frc.team703.robot;
 
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import org.usfirst.frc.team703.robot.subsystems.*;
@@ -30,6 +32,9 @@ public class Robot extends IterativeRobot {
 		auton = new AutonHandler(drive, lift, intake, vision, this);
 		
 		auton.publishDashboard();
+		
+		UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
+		camera.setResolution(320, 240);
 	}
 	
 	public void autonomousInit() {	
@@ -43,7 +48,6 @@ public class Robot extends IterativeRobot {
 	
 	public void autonomousPeriodic() {
 		if (!autoEnd) {
-			System.out.println("AUTONOMOUS RUNNING");
 			auton.runAuton();
 		}
 		
@@ -58,9 +62,12 @@ public class Robot extends IterativeRobot {
 	}
 	
 	public void teleopPeriodic() {
-		//System.out.println("Is stuck: " + drive.checkIfStuck());
 		
-		drive.tankDrive();
+		drive.setCreepMode(driverCont.getRawButton(RobotMap.DRIVE_CREEP_MODE));
+		
+		drive.arcadeDrive();
+		
+		intake.setCreepMode(cont.getRawButton(RobotMap.INTAKE_CREEP_MODE));
 		
 		intake.setSpeed(cont.getRawAxis(RobotMap.ARM_LEFT),cont.getRawAxis(RobotMap.ARM_RIGHT),
 				cont.getRawButton(RobotMap.ARM_SHOOT[0]) && cont.getRawButton(RobotMap.ARM_SHOOT[1]));
@@ -75,8 +82,8 @@ public class Robot extends IterativeRobot {
 		if (driverCont.getRawButton(9))
 			vision.followTarget();
 		
-		
-		//System.out.println("Error X: " + vision.getErrorX() + " | Error Y: " + vision.getErrorY());
+		//if (driverCont.getRawButton(6))
+			//vision.pickupCube();
 	}
 	
 	public void disabledInit() {
@@ -85,6 +92,31 @@ public class Robot extends IterativeRobot {
 	
 	public void disabledPeriodic() {
 		
+	}
+	
+	//***************************************************************
+	//
+	// UTILITIES
+	//
+	//***************************************************************
+	
+	public boolean haltAutonomous() {
+		boolean halt = false;
+		
+		if (!isAutonomous()) {
+			System.out.print("Robot is not in autonomous. ");
+			halt = true;
+		}
+		
+		if (!isEnabled()) {
+			System.out.print("Robot is not enabled. ");
+			halt = true;
+		}
+		
+		if (halt)
+			System.out.println("Autonomous halting prematurely...");
+		
+		return halt;
 	}
 	
 	//*************************************************************** 
